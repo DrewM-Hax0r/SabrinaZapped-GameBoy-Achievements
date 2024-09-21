@@ -1,6 +1,13 @@
 // Sabrina: The Animated Series - Zapped!
 // #ID = 9722
 
+// $00C000: [8-bit] Debug Menu (Level Select) Flag
+//          This flag is set when the player loads into a level using the secret dev level select menu. Usage of this menu is not allowed for this achievement set. After the flag is set, it will remain set for the duration of the play session.
+//
+//          0x00 = Debug Menu Not Used
+//          0x01 = Debug Menu Used
+function DebugMenuFlag() => byte(0x00C000)
+
 // $00C9FA: [8-bit] Character Flag
 //          Can be used to tell which character the player is currently controlling.
 //          
@@ -121,6 +128,16 @@ function PlayerStateCategory() => byte(0x011003)
 // $01102F: [16-bit BE] Player Sprite Index
 function PlayerSpriteIndex() => word_be(0x01102F)
 
+// $011049: [8-bit] Player Status
+//          Can be used to check to see if the player is in game under normal circumstances.
+//
+//          0x09 = Sabrina (active)
+//          0x16 = Sabrina (out of lives)
+//          0x0A = Salem (active)
+//          0x0D = Salem (out of lives)
+//          0x0C = Sabrina or Salem (lost a life)
+function PlayerStatus() => byte(0x011049)
+
 // $01107B: [8-bit] Entity 1 Active Status
 //          
 //          0x00 = Active Entity
@@ -147,6 +164,11 @@ function Entity1ClearBitOffset() => word(0x0110A2)
 //          The bit will be flipped to 0x01 when the player enters the area of the level that causes the entity to spawn in. If the player leaves the area that the entity is loaded into, the bit will flip back to 0x00 when the entity de-spawns. If the player interacted with the entity such that it was removed from the level, the bit will stay flipped to 0x01 when the player leaves the area that the entity was placed in. This is how the game remembers to not spawn the entity back in if the player returns to that area again.
 function EntityClearBitAddressSpaceMarker() => byte(0x012000)
 
+// $015FF8: [8-bit] Game Paused Flag
+//
+//          0xFF = Game Not Paused
+//          0x0F = Game Paused
+function GamePausedFlag() => byte(0x015FF8)
 
 
 // ---------------------------
@@ -197,6 +219,20 @@ LEVEL_ID_EXIT_W4L2 = 0x90
 LEVEL_ID_EXIT_W4L3 = 0x91
 LEVEL_ID_EXIT_W4L4 = 0x92
 
+ENTITY_ADDRESS_SPACE = 0x01107B
+ENTITY_ADDRESS_SPACE_SIZE = 0x7B
+
+ENTITY_OFFSET_STATE = 0x02
+
+SABRINA_STATUS_ACTIVE = 0x09
+SALEM_STATUS_ACTIVE = 0x0A
+
+PLAYER_STATUS_LOST_LIFE = 0x0C
+
+SABRINA_STATUS_LOST_ALL_LIVES = 0x16
+SALEM_STATUS_LOST_ALL_LIVES = 0x0D
+
+W1_BOSS_STATE_TRANSFORM = 0x4C07
 
 
 // ---------------------------
@@ -211,18 +247,96 @@ function InArray(value, array) {
     return result
 }
 
+function LockIfUsedDebugMenuInThisSession() => unless(once(DebugMenuFlag() == 0x01))
+
+function GamePaused() => GamePausedFlag() == 0x0F
+
+function StartedLevelOnThisFrame(levelId) => LevelId() == levelId && prev(PlayerStatus()) != SABRINA_STATUS_ACTIVE && PlayerStatus() == SABRINA_STATUS_ACTIVE
+
+function ClearLevelOnThisFrame(levelId, levelExitId) => LockIfUsedDebugMenuInThisSession() && prev(LevelId()) == levelId && LevelId() == levelExitId
+
+function PlayerOutOfHealthOnThisFrame() => (prev(PlayerStatus()) != PLAYER_STATUS_LOST_LIFE && PlayerStatus() == PLAYER_STATUS_LOST_LIFE) ||
+                                           (prev(PlayerStatus()) != SABRINA_STATUS_LOST_ALL_LIVES && PlayerStatus() == SABRINA_STATUS_LOST_ALL_LIVES) ||
+                                           (prev(PlayerStatus()) != SALEM_STATUS_LOST_ALL_LIVES && PlayerStatus() == SALEM_STATUS_LOST_ALL_LIVES)
+
+function EntityAddress(slot) => ENTITY_ADDRESS_SPACE + (ENTITY_ADDRESS_SPACE_SIZE * slot)
+
+function EntityState(address) => word(address + ENTITY_OFFSET_STATE)
+
+function BossDefeatedOnThisFrame(levelId, bossDefeatedState, allowDebug=false) {
+    // Boss is always in the first entity slot
+    bossState = EntityState(EntityAddress(0))
+    bossDefeated = LevelId() == levelId && prev(bossState) != bossDefeatedState && bossState == bossDefeatedState
+    if (allowDebug) {
+        return bossDefeated
+    } else {
+        return LockIfUsedDebugMenuInThisSession() && bossDefeated
+    }
+}
 
 
 // ---------------------------
 // ------ Achievements -------
 // ---------------------------
 
+achievement(
+    id = 465195, badge = "526350",
+    title = "School Level 1 Clear", points = 1,
+    description = "Clear Level 1-1",
+    type = "progression",
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W1L1, LEVEL_ID_EXIT_W1L1)
+)
+
+achievement(
+    id = 465199, badge = "526361",
+    title = "School Level 2 Clear", points = 1,
+    description = "Clear Level 1-2",
+    type = "progression",
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W1L2, LEVEL_ID_EXIT_W1L2)
+)
+
+achievement(
+    id = 465205, badge = "526362",
+    title = "School Level 3 Clear", points = 1,
+    description = "Clear Level 1-3",
+    type = "progression",
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W1L3, LEVEL_ID_EXIT_W1L3)
+)
+
+achievement(
+    id = 465208, badge = "526387",
+    title = "School Level 4 Clear", points = 1,
+    description = "Clear Level 1-4",
+    type = "progression",
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W1L4, LEVEL_ID_EXIT_W1L4)
+)
+
+achievement(
+    id = 465211, badge = "526393",
+    title = "Harvzilla", points = 1,
+    description = "Transform crocodile Harvey back into a human",
+    type = "progression",
+    trigger = BossDefeatedOnThisFrame(LEVEL_ID_W1BOSS, W1_BOSS_STATE_TRANSFORM)
+)
 
 
 // -------------------------
 // ----- Leaderboards ------
 // -------------------------
 
+function BossTimeTrialLeaderboardValue(levelId) => measured(tally(0, !GamePaused() && LevelId() == levelId))
+
+leaderboard(
+    id=118198,
+    title="School Boss Time Trial",
+    description="Defeat the boss of World 1 as quickly as you can",
+    start=StartedLevelOnThisFrame(LEVEL_ID_W1BOSS),
+    cancel=LevelId() != LEVEL_ID_W1BOSS || PlayerOutOfHealthOnThisFrame(),
+    submit=BossDefeatedOnThisFrame(LEVEL_ID_W1BOSS, W1_BOSS_STATE_TRANSFORM, allowDebug=true),
+    value=BossTimeTrialLeaderboardValue(LEVEL_ID_W1BOSS),
+    format="FRAMES",
+    lower_is_better=true
+)
 
 
 // -------------------------
@@ -231,7 +345,7 @@ function InArray(value, array) {
 
 PASSWORD_SCREEN_LEVEL_IDS = [0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53]
 
-function NotInGame() => RpInGameFlag() == 0x00  PlayerActiveStatus() != 0x00 || PlayerStateCategory() == 0x5F || PlayerStateCategory() == 0x69 || PlayerStateCategory() == 0x6A || InArray(LevelId(), PASSWORD_SCREEN_LEVEL_IDS)
+function NotInGame() => RpInGameFlag() == 0x00 || PlayerActiveStatus() != 0x00 || PlayerStateCategory() == 0x5F || PlayerStateCategory() == 0x69 || PlayerStateCategory() == 0x6A || InArray(LevelId(), PASSWORD_SCREEN_LEVEL_IDS)
 
 LevelLookup = {
     LEVEL_ID_W1L1: "in Level 1-1",
