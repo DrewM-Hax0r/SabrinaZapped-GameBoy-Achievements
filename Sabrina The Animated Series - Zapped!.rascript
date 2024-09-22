@@ -191,7 +191,7 @@ LEVEL_ID_W3L1 = 0x0A
 LEVEL_ID_W3L2 = 0x0B
 LEVEL_ID_W3L3 = 0x0C
 LEVEL_ID_W3L4 = 0x0D
-LEVEL_ID_W3BOSS = 0x1E
+LEVEL_ID_W3BOSS = 0x0E
 
 LEVEL_ID_W4L1 = 0x0F
 LEVEL_ID_W4L2 = 0x10
@@ -233,6 +233,9 @@ SABRINA_STATUS_LOST_ALL_LIVES = 0x16
 SALEM_STATUS_LOST_ALL_LIVES = 0x0D
 
 W1_BOSS_STATE_TRANSFORM = 0x4C07
+W2_BOSS_STATE_TRANSFORM = 0x5B20
+W3_BOSS_STATE_TRANSFORM = 0x5100
+W4_BOSS_STATE_TRANSFORM = 0x6662
 
 
 // ---------------------------
@@ -264,8 +267,13 @@ function EntityAddress(slot) => ENTITY_ADDRESS_SPACE + (ENTITY_ADDRESS_SPACE_SIZ
 function EntityState(address) => word(address + ENTITY_OFFSET_STATE)
 
 function BossDefeatedOnThisFrame(levelId, bossDefeatedState, allowDebug=false) {
-    // Boss is always in the first entity slot
-    bossState = EntityState(EntityAddress(0))
+    bossSlot = -1
+    if (levelId == LEVEL_ID_W1BOSS) { bossSlot = 0 }
+    if (levelId == LEVEL_ID_W2BOSS) { bossSlot = 3 }
+    if (levelId == LEVEL_ID_W3BOSS) { bossSlot = 0 }
+    if (levelId == LEVEL_ID_W4BOSS) { bossSlot = 5 }
+
+    bossState = EntityState(EntityAddress(bossSlot))
     bossDefeated = LevelId() == levelId && prev(bossState) != bossDefeatedState && bossState == bossDefeatedState
     if (allowDebug) {
         return bossDefeated
@@ -281,7 +289,7 @@ function BossDefeatedOnThisFrame(levelId, bossDefeatedState, allowDebug=false) {
 
 achievement(
     id = 465195, badge = "526350",
-    title = "School Level 1 Clear", points = 1,
+    title = "Greendale School Level 1 Clear", points = 1,
     description = "Clear Level 1-1",
     type = "progression",
     trigger = ClearLevelOnThisFrame(LEVEL_ID_W1L1, LEVEL_ID_EXIT_W1L1)
@@ -289,7 +297,7 @@ achievement(
 
 achievement(
     id = 465199, badge = "526361",
-    title = "School Level 2 Clear", points = 1,
+    title = "Greendale School Level 2 Clear", points = 1,
     description = "Clear Level 1-2",
     type = "progression",
     trigger = ClearLevelOnThisFrame(LEVEL_ID_W1L2, LEVEL_ID_EXIT_W1L2)
@@ -297,15 +305,15 @@ achievement(
 
 achievement(
     id = 465205, badge = "526362",
-    title = "School Level 3 Clear", points = 1,
+    title = "Greendale School Level 3 Clear", points = 1,
     description = "Clear Level 1-3",
     type = "progression",
     trigger = ClearLevelOnThisFrame(LEVEL_ID_W1L3, LEVEL_ID_EXIT_W1L3)
 )
 
 achievement(
-    id = 465208, badge = "526387",
-    title = "School Level 4 Clear", points = 1,
+    id = 465208, badge = "526921",
+    title = "Greendale School Level 4 Clear", points = 1,
     description = "Clear Level 1-4",
     type = "progression",
     trigger = ClearLevelOnThisFrame(LEVEL_ID_W1L4, LEVEL_ID_EXIT_W1L4)
@@ -313,10 +321,130 @@ achievement(
 
 achievement(
     id = 465211, badge = "526393",
-    title = "Harvzilla", points = 1,
+    title = "Harvzilla", points = 5,
     description = "Transform crocodile Harvey back into a human",
     type = "progression",
     trigger = BossDefeatedOnThisFrame(LEVEL_ID_W1BOSS, W1_BOSS_STATE_TRANSFORM)
+)
+
+achievement(
+    id = 465527, badge = "526840",
+    title = "Beach Festival Level 1 Clear", points = 2,
+    description = "Clear Level 2-1",
+    type = "progression",
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W2L1, LEVEL_ID_EXIT_W2L1)
+)
+
+achievement(
+    id = 465528, badge = "526841",
+    title = "Beach Festival Level 2 Clear", points = 2,
+    description = "Clear Level 2-2",
+    type = "progression",
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W2L2, LEVEL_ID_EXIT_W2L2)
+)
+
+achievement(
+    id = 465529, badge = "526842",
+    title = "Beach Festival Level 3 Clear", points = 2,
+    description = "Clear Level 2-3",
+    type = "progression",
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W2L3, LEVEL_ID_EXIT_W2L3)
+)
+
+achievement(
+    id = 465530, badge = "526843",
+    title = "Beach Festival Level 4 Clear", points = 2,
+    description = "Clear Level 2-4",
+    type = "progression",
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W2L4, LEVEL_ID_EXIT_W2L4)
+)
+
+achievement(
+    id = 465531, badge = "526844",
+    title = "Wiccan of the Sea", points = 5,
+    description = "Transform squid Chloe back into a human",
+    type = "progression",
+    trigger = BossDefeatedOnThisFrame(LEVEL_ID_W2BOSS, W2_BOSS_STATE_TRANSFORM)
+)
+
+achievement(
+    id = 465540, badge = "526853",
+    title = "Town Center Mall Level 1 Clear", points = 3,
+    description = "Clear Level 3-1",
+    type = "progression",
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W3L1, LEVEL_ID_EXIT_W3L1)
+)
+
+achievement(
+    id = 465541, badge = "526854",
+    title = "Town Center Mall Level 2 Clear", points = 3,
+    description = "Clear Level 3-2",
+    type = "progression",
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W3L2, LEVEL_ID_EXIT_W3L2)
+)
+
+achievement(
+    id = 465542, badge = "526855",
+    title = "Town Center Mall Level 3 Clear", points = 3,
+    description = "Clear Level 3-3",
+    type = "progression",
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W3L3, LEVEL_ID_EXIT_W3L3)
+)
+
+achievement(
+    id = 465543, badge = "526856",
+    title = "Town Center Mall Level 4 Clear", points = 3,
+    description = "Clear Level 3-4",
+    type = "progression",
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W3L4, LEVEL_ID_EXIT_W3L4)
+)
+
+achievement(
+    id = 465551, badge = "526864",
+    title = "Get Lost Bird Brain", points = 5,
+    description = "Transform bird Gem back into a human",
+    type = "progression",
+    trigger = BossDefeatedOnThisFrame(LEVEL_ID_W3BOSS, W3_BOSS_STATE_TRANSFORM)
+)
+
+achievement(
+    id = 465594, badge = "526908",
+    title = "Greendale City Zoo Level 1 Clear", points = 4,
+    description = "Clear Level 4-1",
+    type = "progression",
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W4L1, LEVEL_ID_EXIT_W4L1)
+)
+
+achievement(
+    id = 465595, badge = "526911",
+    title = "Greendale City Zoo Level 2 Clear", points = 4,
+    description = "Clear Level 4-2",
+    type = "progression",
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W4L2, LEVEL_ID_EXIT_W4L2)
+)
+
+achievement(
+    id = 465596, badge = "526912",
+    title = "Greendale City Zoo Level 3 Clear", points = 4,
+    description = "Clear Level 4-3",
+    type = "progression",
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W4L3, LEVEL_ID_EXIT_W4L3)
+)
+
+achievement(
+    id = 465597, badge = "526914",
+    title = "Greendale City Zoo Level 4 Clear", points = 4,
+    description = "Clear Level 4-4",
+    type = "progression",
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W4L4, LEVEL_ID_EXIT_W4L4)
+)
+
+achievement(
+    id = 465599, badge = "526918",
+    title = "All the Monkeys in the House Go Yeah", points = 25,
+    description = "Transform gorilla Slugloafe back into a human",
+    type = "win_condition",
+    trigger = BossDefeatedOnThisFrame(LEVEL_ID_W4BOSS, W4_BOSS_STATE_TRANSFORM)
 )
 
 
@@ -328,12 +456,47 @@ function BossTimeTrialLeaderboardValue(levelId) => measured(tally(0, !GamePaused
 
 leaderboard(
     id=118198,
-    title="School Boss Time Trial",
+    title="Greendale School Boss Time Trial",
     description="Defeat the boss of World 1 as quickly as you can",
     start=StartedLevelOnThisFrame(LEVEL_ID_W1BOSS),
     cancel=LevelId() != LEVEL_ID_W1BOSS || PlayerOutOfHealthOnThisFrame(),
     submit=BossDefeatedOnThisFrame(LEVEL_ID_W1BOSS, W1_BOSS_STATE_TRANSFORM, allowDebug=true),
     value=BossTimeTrialLeaderboardValue(LEVEL_ID_W1BOSS),
+    format="FRAMES",
+    lower_is_better=true
+)
+
+leaderboard(
+    id=118269,
+    title="Beach Festival Boss Time Trial",
+    description="Defeat the boss of World 2 as quickly as you can",
+    start=StartedLevelOnThisFrame(LEVEL_ID_W2BOSS),
+    cancel=LevelId() != LEVEL_ID_W2BOSS || PlayerOutOfHealthOnThisFrame(),
+    submit=BossDefeatedOnThisFrame(LEVEL_ID_W2BOSS, W2_BOSS_STATE_TRANSFORM, allowDebug=true),
+    value=BossTimeTrialLeaderboardValue(LEVEL_ID_W2BOSS),
+    format="FRAMES",
+    lower_is_better=true
+)
+
+leaderboard(
+    id=118330,
+    title="City Town Mall Boss Time Trial",
+    description="Defeat the boss of World 3 as quickly as you can",
+    start=StartedLevelOnThisFrame(LEVEL_ID_W3BOSS),
+    cancel=LevelId() != LEVEL_ID_W3BOSS || PlayerOutOfHealthOnThisFrame(),
+    submit=BossDefeatedOnThisFrame(LEVEL_ID_W3BOSS, W3_BOSS_STATE_TRANSFORM, allowDebug=true),
+    value=BossTimeTrialLeaderboardValue(LEVEL_ID_W3BOSS),
+    format="FRAMES",
+    lower_is_better=true
+)
+
+leaderboard(
+    title="Greendale City Zoo Boss Time Trial",
+    description="Defeat the boss of World 4 as quickly as you can",
+    start=StartedLevelOnThisFrame(LEVEL_ID_W4BOSS),
+    cancel=LevelId() != LEVEL_ID_W4BOSS || PlayerOutOfHealthOnThisFrame(),
+    submit=BossDefeatedOnThisFrame(LEVEL_ID_W4BOSS, W4_BOSS_STATE_TRANSFORM, allowDebug=true),
+    value=BossTimeTrialLeaderboardValue(LEVEL_ID_W4BOSS),
     format="FRAMES",
     lower_is_better=true
 )
@@ -380,10 +543,10 @@ LevelLookup = {
     LEVEL_ID_EXIT_W4L3: "in Level 4-3",
     LEVEL_ID_W4L4: "in Level 4-4",
     LEVEL_ID_EXIT_W4L4: "in Level 4-4",
-    LEVEL_ID_W1BOSS: "fighting Harvey the Crocodile",
-    LEVEL_ID_W2BOSS: "fighting Chloe the Octopus",
-    LEVEL_ID_W3BOSS: "fighting Gem the Duck",
-    LEVEL_ID_W4BOSS: "fighting Slugloafe the Ape"
+    LEVEL_ID_W1BOSS: "fighting Harvey the crocodile",
+    LEVEL_ID_W2BOSS: "fighting Chloe the squid",
+    LEVEL_ID_W3BOSS: "fighting Gem the bird",
+    LEVEL_ID_W4BOSS: "fighting Slugloafe the gorilla"
 }
 
 HeartLookup = {
