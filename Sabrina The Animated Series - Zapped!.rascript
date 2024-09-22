@@ -102,6 +102,12 @@ function CurrentPowerStarCount() => byte(0x00c9fd)
 //          0x53 = W4 Boss
 function LevelId() => byte(0x00C9FF)
 
+// $00CA03: [8-bit] Hover Jump Spell Remaining Jumps
+//This value decreases by 0x01 each time Sabrina uses the Hover Jump Spell to activate an extra jump while in midair. If this value is 0x00, Sabrina does not have any more extra jumps. The value is reset to 0x03 each time Sabrina lands on the ground.
+//
+//The maximum value is 0x03. When Sabrina jumps off the ground, this value does NOT decrease - it only decreases when Sabrina uses extra jumps while in midair. This value is initialized to 0x03 when Sabrina starts a level, even if she has not yet aquired the Hover Jump Spell.
+function HoverJumpRemainingJumps() => byte(0x00CA03)
+
 // $00CA2A: [8-bit] Current number of lives
 function CurrentNumberOfLives() => byte(0x00CA2A)
 
@@ -224,6 +230,10 @@ ENTITY_ADDRESS_SPACE_SIZE = 0x7B
 
 ENTITY_OFFSET_STATE = 0x02
 
+PLAYER_STATE_CRUSH_SPELL_ACTIVATE = 0x6579
+PLAYER_STATE_BUBBLE_SPELL_ACTIVATE = 0x6787
+PLAYER_STATE_TELEPORT_SPELL_ACTIVATE = 0x5F24
+
 SABRINA_STATUS_ACTIVE = 0x09
 SALEM_STATUS_ACTIVE = 0x0A
 
@@ -257,6 +267,10 @@ function GamePaused() => GamePausedFlag() == 0x0F
 function StartedLevelOnThisFrame(levelId) => LevelId() == levelId && prev(PlayerStatus()) != SABRINA_STATUS_ACTIVE && PlayerStatus() == SABRINA_STATUS_ACTIVE
 
 function ClearLevelOnThisFrame(levelId, levelExitId) => LockIfUsedDebugMenuInThisSession() && prev(LevelId()) == levelId && LevelId() == levelExitId
+
+function PlayerEnteredStateOnThisFrame(playerState) => prev(PlayerState()) != playerState && PlayerState() == playerState
+
+function SabrinaActive() => PlayerStatus() == SABRINA_STATUS_ACTIVE
 
 function PlayerOutOfHealthOnThisFrame() => (prev(PlayerStatus()) != PLAYER_STATUS_LOST_LIFE && PlayerStatus() == PLAYER_STATUS_LOST_LIFE) ||
                                            (prev(PlayerStatus()) != SABRINA_STATUS_LOST_ALL_LIVES && PlayerStatus() == SABRINA_STATUS_LOST_ALL_LIVES) ||
@@ -445,6 +459,34 @@ achievement(
     description = "Transform gorilla Slugloafe back into a human",
     type = "win_condition",
     trigger = BossDefeatedOnThisFrame(LEVEL_ID_W4BOSS, W4_BOSS_STATE_TRANSFORM)
+)
+
+achievement(
+    id = 465601, badge = "526927",
+    title = "Can't Jump Far, That's Not Fair, Chant This Spell, Jump Midair!", points = 2,
+    description = "Activate the Hover Jump Spell while playing as Sabrina",
+    trigger = LockIfUsedDebugMenuInThisSession() && SabrinaActive() && prev(HoverJumpRemainingJumps()) == 0x03 && HoverJumpRemainingJumps() == 0x02
+)
+
+achievement(
+    id = 465612, badge = "526944",
+    title = "Blocks Below, Form a Queue, Chant This Spell, Break On Through!", points = 2,
+    description = "Activate the Crush Spell while playing as Sabrina",
+    trigger = LockIfUsedDebugMenuInThisSession() && SabrinaActive() && PlayerEnteredStateOnThisFrame(PLAYER_STATE_CRUSH_SPELL_ACTIVATE)
+)
+
+achievement(
+    id = 465613, badge = "526949",
+    title = "Paths Above I Need a Lift, Chant This Spell And Up I'll Drift!", points = 2,
+    description = "Activate the Bubble Spell while playing as Sabrina",
+    trigger = LockIfUsedDebugMenuInThisSession() && SabrinaActive() && PlayerEnteredStateOnThisFrame(PLAYER_STATE_BUBBLE_SPELL_ACTIVATE)
+)
+
+achievement(
+    id = 465631, badge = "527006",
+    title = "Stuck Again, Not a Problem, Pass Through Walls, Pretty Awesome!", points = 2,
+    description = "Activate the Teleport Spell while playing as Sabrina",
+    trigger = LockIfUsedDebugMenuInThisSession() && SabrinaActive() && PlayerEnteredStateOnThisFrame(PLAYER_STATE_TELEPORT_SPELL_ACTIVATE)
 )
 
 
