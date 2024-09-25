@@ -111,6 +111,22 @@ function HoverJumpRemainingJumps() => byte(0x00CA03)
 // $00CA2A: [8-bit] Current number of lives
 function CurrentNumberOfLives() => byte(0x00CA2A)
 
+// $00CA2E: [8-bit] Game State Flags
+//          Bit flags describing various game states
+//
+//          bit0 = If set, game is paused
+//          bit1 = If set, player is in an invincible state (just took damage)
+//          bit2 = If set, Exit message has appeared over the player
+//          bit3 = If set, the player has restarted an area (due to losing a life)
+//          bit4 = If set, game is triggered to go to the Game Over screen
+//          bit5 = Unknown
+//          bit6 = If set, game is triggered to go to the game's ending cutscene
+//          bit7 = If set, game is transitioning into a new area
+function GamePausedFlag() => bit0(0x00CA2E)
+function PlayerDamagedFlag() => bit1(0x00CA2E)
+function ReloadedAreaFlag() => bit3(0x00CA2E)
+function AreaTransitionFlag() => bit7(0x00CA2E)
+
 // $00ca30: [8-bit] In-Game Flag
 //          This value will never be 0x00 when In-Game.
 //          Used in Rich Presence only.
@@ -170,12 +186,6 @@ function Entity1ClearBitOffset() => word(0x0110A2)
 //          The bit will be flipped to 0x01 when the player enters the area of the level that causes the entity to spawn in. If the player leaves the area that the entity is loaded into, the bit will flip back to 0x00 when the entity de-spawns. If the player interacted with the entity such that it was removed from the level, the bit will stay flipped to 0x01 when the player leaves the area that the entity was placed in. This is how the game remembers to not spawn the entity back in if the player returns to that area again.
 function EntityClearBitAddressSpaceMarker() => byte(0x012000)
 
-// $015FF8: [8-bit] Game Paused Flag
-//
-//          0xFF = Game Not Paused
-//          0x0F = Game Paused
-function GamePausedFlag() => byte(0x015FF8)
-
 
 // ---------------------------
 // -------- Constants --------
@@ -225,6 +235,34 @@ LEVEL_ID_EXIT_W4L2 = 0x90
 LEVEL_ID_EXIT_W4L3 = 0x91
 LEVEL_ID_EXIT_W4L4 = 0x92
 
+LEVEL_ID_PASSWORD_W1L2 = 0x41
+LEVEL_ID_PASSWORD_W1L3 = 0x42
+LEVEL_ID_PASSWORD_W1L4 = 0x43
+LEVEL_ID_PASSWORD_W1BOSS = 0x44
+
+LEVEL_ID_PASSWORD_W2L1 = 0x45
+LEVEL_ID_PASSWORD_W2L2 = 0x46
+LEVEL_ID_PASSWORD_W2L3 = 0x47
+LEVEL_ID_PASSWORD_W2L4 = 0x48
+LEVEL_ID_PASSWORD_W2BOSS = 0x49
+
+LEVEL_ID_PASSWORD_W3L1 = 0x4A
+LEVEL_ID_PASSWORD_W3L2 = 0x4B
+LEVEL_ID_PASSWORD_W3L3 = 0x4C
+LEVEL_ID_PASSWORD_W3L4 = 0x4D
+LEVEL_ID_PASSWORD_W3BOSS = 0x4E
+
+LEVEL_ID_PASSWORD_W4L1 = 0x4F
+LEVEL_ID_PASSWORD_W4L2 = 0x50
+LEVEL_ID_PASSWORD_W4L3 = 0x51
+LEVEL_ID_PASSWORD_W4L4 = 0x52
+LEVEL_ID_PASSWORD_W4BOSS = 0x53
+
+WORLD1_LEVEL_IDS = [LEVEL_ID_W1L1, LEVEL_ID_W1L2, LEVEL_ID_W1L3, LEVEL_ID_W1L4, LEVEL_ID_W1BOSS, LEVEL_ID_EXIT_W1L1, LEVEL_ID_EXIT_W1L2, LEVEL_ID_EXIT_W1L3, LEVEL_ID_EXIT_W1L4, LEVEL_ID_PASSWORD_W1L2, LEVEL_ID_PASSWORD_W1L3, LEVEL_ID_PASSWORD_W1L4, LEVEL_ID_PASSWORD_W1BOSS]
+WORLD2_LEVEL_IDS = [LEVEL_ID_W2L1, LEVEL_ID_W2L2, LEVEL_ID_W2L3, LEVEL_ID_W2L4, LEVEL_ID_W2BOSS, LEVEL_ID_EXIT_W2L1, LEVEL_ID_EXIT_W2L2, LEVEL_ID_EXIT_W2L3, LEVEL_ID_EXIT_W2L4, LEVEL_ID_PASSWORD_W2L2, LEVEL_ID_PASSWORD_W2L3, LEVEL_ID_PASSWORD_W2L4, LEVEL_ID_PASSWORD_W2BOSS]
+WORLD3_LEVEL_IDS = [LEVEL_ID_W3L1, LEVEL_ID_W3L2, LEVEL_ID_W3L3, LEVEL_ID_W3L4, LEVEL_ID_W3BOSS, LEVEL_ID_EXIT_W3L1, LEVEL_ID_EXIT_W3L2, LEVEL_ID_EXIT_W3L3, LEVEL_ID_EXIT_W3L4, LEVEL_ID_PASSWORD_W3L2, LEVEL_ID_PASSWORD_W3L3, LEVEL_ID_PASSWORD_W3L4, LEVEL_ID_PASSWORD_W3BOSS]
+WORLD4_LEVEL_IDS = [LEVEL_ID_W4L1, LEVEL_ID_W4L2, LEVEL_ID_W4L3, LEVEL_ID_W4L4, LEVEL_ID_W4BOSS, LEVEL_ID_EXIT_W4L1, LEVEL_ID_EXIT_W4L2, LEVEL_ID_EXIT_W4L3, LEVEL_ID_EXIT_W4L4, LEVEL_ID_PASSWORD_W4L2, LEVEL_ID_PASSWORD_W4L3, LEVEL_ID_PASSWORD_W4L4, LEVEL_ID_PASSWORD_W4BOSS]
+
 ENTITY_ADDRESS_SPACE = 0x01107B
 ENTITY_ADDRESS_SPACE_SIZE = 0x7B
 
@@ -262,9 +300,14 @@ function InArray(value, array) {
 
 function LockIfUsedDebugMenuInThisSession() => unless(once(DebugMenuFlag() == 0x01))
 
-function GamePaused() => GamePausedFlag() == 0x0F
+function GamePaused() => GamePausedFlag() == 1
 
-function StartedLevelOnThisFrame(levelId) => LevelId() == levelId && prev(PlayerStatus()) != SABRINA_STATUS_ACTIVE && PlayerStatus() == SABRINA_STATUS_ACTIVE
+function StartedLevelOnThisFrame(levelId) {
+    levelCheck = LevelId() == levelId
+    initialAreaLoad = prev(AreaTransitionFlag()) == 1 && AreaTransitionFlag() == 0
+    
+    return levelCheck && initialAreaLoad
+}
 
 function ClearLevelOnThisFrame(levelId, levelExitId) => LockIfUsedDebugMenuInThisSession() && prev(LevelId()) == levelId && LevelId() == levelExitId
 
@@ -294,6 +337,16 @@ function BossDefeatedOnThisFrame(levelId, bossDefeatedState, allowDebug=false) {
     } else {
         return LockIfUsedDebugMenuInThisSession() && bossDefeated
     }
+}
+
+function MasterWorld(allLevelIds, firstLevelId, bossLevelId, bossStateTransform) {
+    startCondition = once(StartedLevelOnThisFrame(firstLevelId))
+    resetCondition = never(PlayerOutOfHealthOnThisFrame()) && never(!InArray(LevelId(), allLevelIds))
+    
+    // Note that while we are specifying allowDebug true here, we are still preventing debug usage on the return line of this function
+    triggerCondition = trigger_when(once(BossDefeatedOnThisFrame(bossLevelId, bossStateTransform, allowDebug=true)))
+    
+    return LockIfUsedDebugMenuInThisSession() && startCondition && resetCondition && triggerCondition
 }
 
 
@@ -489,10 +542,40 @@ achievement(
     trigger = LockIfUsedDebugMenuInThisSession() && SabrinaActive() && PlayerEnteredStateOnThisFrame(PLAYER_STATE_TELEPORT_SPELL_ACTIVATE)
 )
 
+achievement(
+    id = 466041, badge = "527640",
+    title = "Greendale School Master", points = 25,
+    description = "Start from Level 1-1 and clear all levels and defeat the boss in World 1 without ever losing a life",
+    trigger = MasterWorld(WORLD1_LEVEL_IDS, LEVEL_ID_W1L1, LEVEL_ID_W1BOSS, W1_BOSS_STATE_TRANSFORM)
+)
+
+achievement(
+    id = 466044, badge = "527652",
+    title = "Beach Festival Master", points = 25,
+    description = "Start from Level 2-1 and clear all levels and defeat the boss in World 2 without ever losing a life",
+    trigger = MasterWorld(WORLD2_LEVEL_IDS, LEVEL_ID_W2L1, LEVEL_ID_W2BOSS, W2_BOSS_STATE_TRANSFORM)
+)
+
+achievement(
+    id = 466045, badge = "527653",
+    title = "Town Center Mall Master", points = 25,
+    description = "Start from Level 3-1 and clear all levels and defeat the boss in World 3 without ever losing a life",
+    trigger = MasterWorld(WORLD3_LEVEL_IDS, LEVEL_ID_W3L1, LEVEL_ID_W3BOSS, W3_BOSS_STATE_TRANSFORM)
+)
+
+achievement(
+    id = 466046, badge = "527654",
+    title = "Greendale City Zoo Master", points = 25,
+    description = "Start from Level 4-1 and clear all levels and defeat the boss in World 4 without ever losing a life",
+    trigger = MasterWorld(WORLD4_LEVEL_IDS, LEVEL_ID_W4L1, LEVEL_ID_W4BOSS, W4_BOSS_STATE_TRANSFORM)
+)
+
 
 // -------------------------
 // ----- Leaderboards ------
 // -------------------------
+
+function BossTimeTrialStartedOnThisFrame(levelId) => StartedLevelOnThisFrame(levelId) || (LevelId() == levelId && prev(PlayerStatus()) != SABRINA_STATUS_ACTIVE && PlayerStatus() == SABRINA_STATUS_ACTIVE)
 
 function BossTimeTrialLeaderboardValue(levelId) => measured(tally(0, !GamePaused() && LevelId() == levelId))
 
@@ -500,7 +583,7 @@ leaderboard(
     id=118198,
     title="Greendale School Boss Time Trial",
     description="Defeat the boss of World 1 as quickly as you can",
-    start=StartedLevelOnThisFrame(LEVEL_ID_W1BOSS),
+    start=BossTimeTrialStartedOnThisFrame(LEVEL_ID_W1BOSS),
     cancel=LevelId() != LEVEL_ID_W1BOSS || PlayerOutOfHealthOnThisFrame(),
     submit=BossDefeatedOnThisFrame(LEVEL_ID_W1BOSS, W1_BOSS_STATE_TRANSFORM, allowDebug=true),
     value=BossTimeTrialLeaderboardValue(LEVEL_ID_W1BOSS),
@@ -512,7 +595,7 @@ leaderboard(
     id=118269,
     title="Beach Festival Boss Time Trial",
     description="Defeat the boss of World 2 as quickly as you can",
-    start=StartedLevelOnThisFrame(LEVEL_ID_W2BOSS),
+    start=BossTimeTrialStartedOnThisFrame(LEVEL_ID_W2BOSS),
     cancel=LevelId() != LEVEL_ID_W2BOSS || PlayerOutOfHealthOnThisFrame(),
     submit=BossDefeatedOnThisFrame(LEVEL_ID_W2BOSS, W2_BOSS_STATE_TRANSFORM, allowDebug=true),
     value=BossTimeTrialLeaderboardValue(LEVEL_ID_W2BOSS),
@@ -524,7 +607,7 @@ leaderboard(
     id=118330,
     title="City Town Mall Boss Time Trial",
     description="Defeat the boss of World 3 as quickly as you can",
-    start=StartedLevelOnThisFrame(LEVEL_ID_W3BOSS),
+    start=BossTimeTrialStartedOnThisFrame(LEVEL_ID_W3BOSS),
     cancel=LevelId() != LEVEL_ID_W3BOSS || PlayerOutOfHealthOnThisFrame(),
     submit=BossDefeatedOnThisFrame(LEVEL_ID_W3BOSS, W3_BOSS_STATE_TRANSFORM, allowDebug=true),
     value=BossTimeTrialLeaderboardValue(LEVEL_ID_W3BOSS),
@@ -535,7 +618,7 @@ leaderboard(
 leaderboard(
     title="Greendale City Zoo Boss Time Trial",
     description="Defeat the boss of World 4 as quickly as you can",
-    start=StartedLevelOnThisFrame(LEVEL_ID_W4BOSS),
+    start=BossTimeTrialStartedOnThisFrame(LEVEL_ID_W4BOSS),
     cancel=LevelId() != LEVEL_ID_W4BOSS || PlayerOutOfHealthOnThisFrame(),
     submit=BossDefeatedOnThisFrame(LEVEL_ID_W4BOSS, W4_BOSS_STATE_TRANSFORM, allowDebug=true),
     value=BossTimeTrialLeaderboardValue(LEVEL_ID_W4BOSS),
