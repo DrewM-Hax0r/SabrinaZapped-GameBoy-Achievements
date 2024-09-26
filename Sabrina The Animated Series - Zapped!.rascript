@@ -305,8 +305,9 @@ function GamePaused() => GamePausedFlag() == 1
 function StartedLevelOnThisFrame(levelId) {
     levelCheck = LevelId() == levelId
     initialAreaLoad = prev(AreaTransitionFlag()) == 1 && AreaTransitionFlag() == 0
+    sabrinaLoaded = HoverJumpRemainingJumps() == 0x03
     
-    return levelCheck && initialAreaLoad
+    return levelCheck && initialAreaLoad && sabrinaLoaded
 }
 
 function ClearLevelOnThisFrame(levelId, levelExitId) => LockIfUsedDebugMenuInThisSession() && prev(LevelId()) == levelId && LevelId() == levelExitId
