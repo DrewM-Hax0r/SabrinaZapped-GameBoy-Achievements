@@ -625,14 +625,14 @@ achievement(
 
 achievement(
     id = 466487, badge = "528377",
-    title = "Zapped! VII", points = 5,
+    title = "Zapped! VII", points = 10,
     description = "Clear Level 3-2 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
     trigger = ZappedChallengeLevel(LEVEL_ID_W3L2, LEVEL_ID_EXIT_W3L2)
 )
 
 achievement(
     id = 466488, badge = "528379",
-    title = "Zapped! VIII", points = 5,
+    title = "Zapped! VIII", points = 10,
     description = "Clear Level 3-3 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
     trigger = ZappedChallengeLevel(LEVEL_ID_W3L3, LEVEL_ID_EXIT_W3L3)
 )
@@ -653,14 +653,14 @@ achievement(
 
 achievement(
     id = 466491, badge = "528382",
-    title = "Zapped! XI", points = 5,
+    title = "Zapped! XI", points = 10,
     description = "Clear Level 4-3 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
     trigger = ZappedChallengeLevel(LEVEL_ID_W4L3, LEVEL_ID_EXIT_W4L3)
 )
 
 achievement(
     id = 466492, badge = "528383",
-    title = "Zapped! XII", points = 5,
+    title = "Zapped! XII", points = 10,
     description = "Clear Level 4-4 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
     trigger = ZappedChallengeLevel(LEVEL_ID_W4L4, LEVEL_ID_EXIT_W4L4)
 )
