@@ -310,7 +310,9 @@ function StartedLevelOnThisFrame(levelId) {
     return levelCheck && initialAreaLoad && sabrinaLoaded
 }
 
-function ClearLevelOnThisFrame(levelId, levelExitId) => LockIfUsedDebugMenuInThisSession() && prev(LevelId()) == levelId && LevelId() == levelExitId
+function ClearLevelOnThisFrame(levelId, levelExitId) => LockIfUsedDebugMenuInThisSession() && ClearLevelOnThisFrameCore(levelId, levelExitId)
+
+function ClearLevelOnThisFrameCore(levelId, levelExitId) => prev(LevelId()) == levelId && LevelId() == levelExitId
 
 function PlayerEnteredStateOnThisFrame(playerState) => prev(PlayerState()) != playerState && PlayerState() == playerState
 
@@ -348,6 +350,14 @@ function MasterWorld(allLevelIds, firstLevelId, bossLevelId, bossStateTransform)
     triggerCondition = trigger_when(once(BossDefeatedOnThisFrame(bossLevelId, bossStateTransform, allowDebug=true)))
     
     return LockIfUsedDebugMenuInThisSession() && startCondition && resetCondition && triggerCondition
+}
+
+function ZappedChallengeLevel(levelId, levelExitId) {
+    startCondition = once(StartedLevelOnThisFrame(levelId))
+    resetConditionA = prev(AnimalCounter()) > AnimalCounter() && CurrentPowerStarCount() < 0x05
+    resetConditionB = PlayerOutOfHealthOnThisFrame()
+    
+    return LockIfUsedDebugMenuInThisSession() && once(startCondition) && never(resetConditionA) && never(resetConditionB) && trigger_when(ClearLevelOnThisFrameCore(levelId, levelExitId))
 }
 
 
@@ -569,6 +579,90 @@ achievement(
     title = "Greendale City Zoo Master", points = 25,
     description = "Start from Level 4-1 and clear all levels and defeat the boss in World 4 without ever losing a life",
     trigger = MasterWorld(WORLD4_LEVEL_IDS, LEVEL_ID_W4L1, LEVEL_ID_W4BOSS, W4_BOSS_STATE_TRANSFORM)
+)
+
+achievement(
+    id = 466255, badge = "528178",
+    title = "Zapped! I", points = 5,
+    description = "Clear Level 1-4 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
+    trigger = ZappedChallengeLevel(LEVEL_ID_W1L4, LEVEL_ID_EXIT_W1L4)
+)
+
+achievement(
+    id = 466478, badge = "528356",
+    title = "Zapped! II", points = 5,
+    description = "Clear Level 2-1 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
+    trigger = ZappedChallengeLevel(LEVEL_ID_W2L1, LEVEL_ID_EXIT_W2L1)
+)
+
+achievement(
+    id = 466479, badge = "528357",
+    title = "Zapped! III", points = 5,
+    description = "Clear Level 2-2 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
+    trigger = ZappedChallengeLevel(LEVEL_ID_W2L2, LEVEL_ID_EXIT_W2L2)
+)
+
+achievement(
+    id = 466480, badge = "528360",
+    title = "Zapped! IV", points = 5,
+    description = "Clear Level 2-3 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
+    trigger = ZappedChallengeLevel(LEVEL_ID_W2L3, LEVEL_ID_EXIT_W2L3)
+)
+
+achievement(
+    id = 466485, badge = "528365",
+    title = "Zapped! V", points = 5,
+    description = "Clear Level 2-4 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
+    trigger = ZappedChallengeLevel(LEVEL_ID_W2L4, LEVEL_ID_EXIT_W2L4)
+)
+
+achievement(
+    id = 466486, badge = "528376",
+    title = "Zapped! VI", points = 5,
+    description = "Clear Level 3-1 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
+    trigger = ZappedChallengeLevel(LEVEL_ID_W3L1, LEVEL_ID_EXIT_W3L1)
+)
+
+achievement(
+    id = 466487, badge = "528377",
+    title = "Zapped! VII", points = 5,
+    description = "Clear Level 3-2 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
+    trigger = ZappedChallengeLevel(LEVEL_ID_W3L2, LEVEL_ID_EXIT_W3L2)
+)
+
+achievement(
+    id = 466488, badge = "528379",
+    title = "Zapped! VIII", points = 5,
+    description = "Clear Level 3-3 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
+    trigger = ZappedChallengeLevel(LEVEL_ID_W3L3, LEVEL_ID_EXIT_W3L3)
+)
+
+achievement(
+    id = 466489, badge = "528380",
+    title = "Zapped! IX", points = 5,
+    description = "Clear Level 4-1 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
+    trigger = ZappedChallengeLevel(LEVEL_ID_W4L1, LEVEL_ID_EXIT_W4L1)
+)
+
+achievement(
+    id = 466490, badge = "528381",
+    title = "Zapped! X", points = 5,
+    description = "Clear Level 4-2 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
+    trigger = ZappedChallengeLevel(LEVEL_ID_W4L2, LEVEL_ID_EXIT_W4L2)
+)
+
+achievement(
+    id = 466491, badge = "528382",
+    title = "Zapped! XI", points = 5,
+    description = "Clear Level 4-3 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
+    trigger = ZappedChallengeLevel(LEVEL_ID_W4L3, LEVEL_ID_EXIT_W4L3)
+)
+
+achievement(
+    id = 466492, badge = "528383",
+    title = "Zapped! XII", points = 5,
+    description = "Clear Level 4-4 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
+    trigger = ZappedChallengeLevel(LEVEL_ID_W4L4, LEVEL_ID_EXIT_W4L4)
 )
 
 
