@@ -265,6 +265,7 @@ WORLD4_LEVEL_IDS = [LEVEL_ID_W4L1, LEVEL_ID_W4L2, LEVEL_ID_W4L3, LEVEL_ID_W4L4, 
 
 ENTITY_ADDRESS_SPACE = 0x01107B
 ENTITY_ADDRESS_SPACE_SIZE = 0x7B
+ENTITY_SLOTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
 
 ENTITY_OFFSET_STATE = 0x02
 
@@ -305,9 +306,9 @@ function GamePaused() => GamePausedFlag() == 1
 function StartedLevelOnThisFrame(levelId) {
     levelCheck = LevelId() == levelId
     initialAreaLoad = prev(AreaTransitionFlag()) == 1 && AreaTransitionFlag() == 0
-    sabrinaLoaded = HoverJumpRemainingJumps() == 0x03
+    playerInactive = PlayerActiveStatus() == 0xFF
     
-    return levelCheck && initialAreaLoad && sabrinaLoaded
+    return levelCheck && initialAreaLoad && !playerInactive
 }
 
 function ClearLevelOnThisFrame(levelId, levelExitId) => LockIfUsedDebugMenuInThisSession() && ClearLevelOnThisFrameCore(levelId, levelExitId)
@@ -326,20 +327,18 @@ function EntityAddress(slot) => ENTITY_ADDRESS_SPACE + (ENTITY_ADDRESS_SPACE_SIZ
 
 function EntityState(address) => word(address + ENTITY_OFFSET_STATE)
 
-function BossDefeatedOnThisFrame(levelId, bossDefeatedState, allowDebug=false) {
-    bossSlot = -1
-    if (levelId == LEVEL_ID_W1BOSS) { bossSlot = 0 }
-    if (levelId == LEVEL_ID_W2BOSS) { bossSlot = 3 }
-    if (levelId == LEVEL_ID_W3BOSS) { bossSlot = 0 }
-    if (levelId == LEVEL_ID_W4BOSS) { bossSlot = 5 }
-
-    bossState = EntityState(EntityAddress(bossSlot))
-    bossDefeated = LevelId() == levelId && prev(bossState) != bossDefeatedState && bossState == bossDefeatedState
-    if (allowDebug) {
-        return bossDefeated
-    } else {
-        return LockIfUsedDebugMenuInThisSession() && bossDefeated
+function BossDefeatedOnThisFrame(levelId, bossDefeatedState) {
+    result = []
+    for slot in ENTITY_SLOTS {
+        bossState = EntityState(EntityAddress(slot))
+        bossDefeated = LevelId() == levelId && prev(bossState) != bossDefeatedState && bossState == bossDefeatedState
+        array_push(result, bossDefeated)
     }
+    return result
+}
+
+function BossClear(levelId, bossDefeatedState) {
+    return LockIfUsedDebugMenuInThisSession() && tally(1, BossDefeatedOnThisFrame(levelId, bossDefeatedState))
 }
 
 function MasterWorld(allLevelIds, firstLevelId, bossLevelId, bossStateTransform) {
@@ -347,7 +346,7 @@ function MasterWorld(allLevelIds, firstLevelId, bossLevelId, bossStateTransform)
     resetCondition = never(PlayerOutOfHealthOnThisFrame()) && never(!InArray(LevelId(), allLevelIds))
     
     // Note that while we are specifying allowDebug true here, we are still preventing debug usage on the return line of this function
-    triggerCondition = trigger_when(once(BossDefeatedOnThisFrame(bossLevelId, bossStateTransform, allowDebug=true)))
+    triggerCondition = trigger_when(tally(1, BossDefeatedOnThisFrame(bossLevelId, bossStateTransform)))
     
     return LockIfUsedDebugMenuInThisSession() && startCondition && resetCondition && triggerCondition
 }
@@ -402,7 +401,7 @@ achievement(
     title = "Harvzilla", points = 5,
     description = "Transform crocodile Harvey back into a human",
     type = "progression",
-    trigger = BossDefeatedOnThisFrame(LEVEL_ID_W1BOSS, W1_BOSS_STATE_TRANSFORM)
+    trigger = BossClear(LEVEL_ID_W1BOSS, W1_BOSS_STATE_TRANSFORM)
 )
 
 achievement(
@@ -442,7 +441,7 @@ achievement(
     title = "Wiccan of the Sea", points = 5,
     description = "Transform squid Chloe back into a human",
     type = "progression",
-    trigger = BossDefeatedOnThisFrame(LEVEL_ID_W2BOSS, W2_BOSS_STATE_TRANSFORM)
+    trigger = BossClear(LEVEL_ID_W2BOSS, W2_BOSS_STATE_TRANSFORM)
 )
 
 achievement(
@@ -482,7 +481,7 @@ achievement(
     title = "Get Lost Bird Brain", points = 5,
     description = "Transform bird Gem back into a human",
     type = "progression",
-    trigger = BossDefeatedOnThisFrame(LEVEL_ID_W3BOSS, W3_BOSS_STATE_TRANSFORM)
+    trigger = BossClear(LEVEL_ID_W3BOSS, W3_BOSS_STATE_TRANSFORM)
 )
 
 achievement(
@@ -522,7 +521,7 @@ achievement(
     title = "All the Monkeys in the House Go Yeah", points = 25,
     description = "Transform gorilla Slugloafe back into a human",
     type = "win_condition",
-    trigger = BossDefeatedOnThisFrame(LEVEL_ID_W4BOSS, W4_BOSS_STATE_TRANSFORM)
+    trigger = BossClear(LEVEL_ID_W4BOSS, W4_BOSS_STATE_TRANSFORM)
 )
 
 achievement(
@@ -670,7 +669,7 @@ achievement(
 // ----- Leaderboards ------
 // -------------------------
 
-function BossTimeTrialStartedOnThisFrame(levelId) => StartedLevelOnThisFrame(levelId) || (LevelId() == levelId && prev(PlayerStatus()) != SABRINA_STATUS_ACTIVE && PlayerStatus() == SABRINA_STATUS_ACTIVE)
+function BossTimeTrialStartedOnThisFrame(levelId, bossMaxHealth) => StartedLevelOnThisFrame(levelId) || (LevelId() == levelId && AnimalCounter() == bossMaxHealth && prev(PlayerStatus()) != SABRINA_STATUS_ACTIVE && PlayerStatus() == SABRINA_STATUS_ACTIVE)
 
 function BossTimeTrialLeaderboardValue(levelId) => measured(tally(0, !GamePaused() && LevelId() == levelId))
 
@@ -678,9 +677,9 @@ leaderboard(
     id=118198,
     title="Greendale School Boss Time Trial",
     description="Defeat the boss of World 1 as quickly as you can",
-    start=BossTimeTrialStartedOnThisFrame(LEVEL_ID_W1BOSS),
+    start=BossTimeTrialStartedOnThisFrame(LEVEL_ID_W1BOSS, 0x03),
     cancel=LevelId() != LEVEL_ID_W1BOSS || PlayerOutOfHealthOnThisFrame(),
-    submit=BossDefeatedOnThisFrame(LEVEL_ID_W1BOSS, W1_BOSS_STATE_TRANSFORM, allowDebug=true),
+    submit=tally(1, BossDefeatedOnThisFrame(LEVEL_ID_W1BOSS, W1_BOSS_STATE_TRANSFORM)),
     value=BossTimeTrialLeaderboardValue(LEVEL_ID_W1BOSS),
     format="FRAMES",
     lower_is_better=true
@@ -690,9 +689,9 @@ leaderboard(
     id=118269,
     title="Beach Festival Boss Time Trial",
     description="Defeat the boss of World 2 as quickly as you can",
-    start=BossTimeTrialStartedOnThisFrame(LEVEL_ID_W2BOSS),
+    start=BossTimeTrialStartedOnThisFrame(LEVEL_ID_W2BOSS, 0x03),
     cancel=LevelId() != LEVEL_ID_W2BOSS || PlayerOutOfHealthOnThisFrame(),
-    submit=BossDefeatedOnThisFrame(LEVEL_ID_W2BOSS, W2_BOSS_STATE_TRANSFORM, allowDebug=true),
+    submit=tally(1, BossDefeatedOnThisFrame(LEVEL_ID_W2BOSS, W2_BOSS_STATE_TRANSFORM)),
     value=BossTimeTrialLeaderboardValue(LEVEL_ID_W2BOSS),
     format="FRAMES",
     lower_is_better=true
@@ -702,9 +701,9 @@ leaderboard(
     id=118330,
     title="City Town Mall Boss Time Trial",
     description="Defeat the boss of World 3 as quickly as you can",
-    start=BossTimeTrialStartedOnThisFrame(LEVEL_ID_W3BOSS),
+    start=BossTimeTrialStartedOnThisFrame(LEVEL_ID_W3BOSS, 0x04),
     cancel=LevelId() != LEVEL_ID_W3BOSS || PlayerOutOfHealthOnThisFrame(),
-    submit=BossDefeatedOnThisFrame(LEVEL_ID_W3BOSS, W3_BOSS_STATE_TRANSFORM, allowDebug=true),
+    submit=tally(1, BossDefeatedOnThisFrame(LEVEL_ID_W3BOSS, W3_BOSS_STATE_TRANSFORM)),
     value=BossTimeTrialLeaderboardValue(LEVEL_ID_W3BOSS),
     format="FRAMES",
     lower_is_better=true
@@ -713,9 +712,9 @@ leaderboard(
 leaderboard(
     title="Greendale City Zoo Boss Time Trial",
     description="Defeat the boss of World 4 as quickly as you can",
-    start=BossTimeTrialStartedOnThisFrame(LEVEL_ID_W4BOSS),
+    start=BossTimeTrialStartedOnThisFrame(LEVEL_ID_W4BOSS, 0x03),
     cancel=LevelId() != LEVEL_ID_W4BOSS || PlayerOutOfHealthOnThisFrame(),
-    submit=BossDefeatedOnThisFrame(LEVEL_ID_W4BOSS, W4_BOSS_STATE_TRANSFORM, allowDebug=true),
+    submit=tally(1, BossDefeatedOnThisFrame(LEVEL_ID_W4BOSS, W4_BOSS_STATE_TRANSFORM)),
     value=BossTimeTrialLeaderboardValue(LEVEL_ID_W4BOSS),
     format="FRAMES",
     lower_is_better=true
