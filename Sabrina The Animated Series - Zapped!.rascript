@@ -299,7 +299,7 @@ function InArray(value, array) {
     return result
 }
 
-function LockIfUsedDebugMenuInThisSession() => unless(once(DebugMenuFlag() == 0x01))
+function DebugMenuNotUsedInThisSession() => DebugMenuFlag() != 0x01
 
 function GamePaused() => GamePausedFlag() == 1
 
@@ -311,7 +311,7 @@ function StartedLevelOnThisFrame(levelId) {
     return levelCheck && initialAreaLoad && !playerInactive
 }
 
-function ClearLevelOnThisFrame(levelId, levelExitId) => LockIfUsedDebugMenuInThisSession() && ClearLevelOnThisFrameCore(levelId, levelExitId)
+function ClearLevelOnThisFrame(levelId, levelExitId) => DebugMenuNotUsedInThisSession() && ClearLevelOnThisFrameCore(levelId, levelExitId)
 
 function ClearLevelOnThisFrameCore(levelId, levelExitId) => prev(LevelId()) == levelId && LevelId() == levelExitId
 
@@ -338,7 +338,7 @@ function BossDefeatedOnThisFrame(levelId, bossDefeatedState) {
 }
 
 function BossClear(levelId, bossDefeatedState) {
-    return LockIfUsedDebugMenuInThisSession() && tally(1, BossDefeatedOnThisFrame(levelId, bossDefeatedState))
+    return DebugMenuNotUsedInThisSession() && tally(1, BossDefeatedOnThisFrame(levelId, bossDefeatedState))
 }
 
 function MasterWorld(allLevelIds, firstLevelId, bossLevelId, bossStateTransform) {
@@ -348,7 +348,7 @@ function MasterWorld(allLevelIds, firstLevelId, bossLevelId, bossStateTransform)
     // Note that while we are specifying allowDebug true here, we are still preventing debug usage on the return line of this function
     triggerCondition = trigger_when(tally(1, BossDefeatedOnThisFrame(bossLevelId, bossStateTransform)))
     
-    return LockIfUsedDebugMenuInThisSession() && startCondition && resetCondition && triggerCondition
+    return DebugMenuNotUsedInThisSession() && startCondition && resetCondition && triggerCondition
 }
 
 function ZappedChallengeLevel(levelId, levelExitId) {
@@ -356,7 +356,7 @@ function ZappedChallengeLevel(levelId, levelExitId) {
     resetConditionA = prev(AnimalCounter()) > AnimalCounter() && CurrentPowerStarCount() < 0x05
     resetConditionB = PlayerOutOfHealthOnThisFrame()
     
-    return LockIfUsedDebugMenuInThisSession() && once(startCondition) && never(resetConditionA) && never(resetConditionB) && trigger_when(ClearLevelOnThisFrameCore(levelId, levelExitId))
+    return DebugMenuNotUsedInThisSession() && once(startCondition) && never(resetConditionA) && never(resetConditionB) && trigger_when(ClearLevelOnThisFrameCore(levelId, levelExitId))
 }
 
 
@@ -528,28 +528,28 @@ achievement(
     id = 465601, badge = "526927",
     title = "Can't Jump Far, That's Not Fair, Chant This Spell, Jump Midair!", points = 2,
     description = "Activate the Hover Jump Spell while playing as Sabrina",
-    trigger = LockIfUsedDebugMenuInThisSession() && SabrinaActive() && prev(HoverJumpRemainingJumps()) == 0x03 && HoverJumpRemainingJumps() == 0x02
+    trigger = DebugMenuNotUsedInThisSession() && SabrinaActive() && prev(HoverJumpRemainingJumps()) == 0x03 && HoverJumpRemainingJumps() == 0x02
 )
 
 achievement(
     id = 465612, badge = "526944",
     title = "Blocks Below, Form a Queue, Chant This Spell, Break On Through!", points = 2,
     description = "Activate the Crush Spell while playing as Sabrina",
-    trigger = LockIfUsedDebugMenuInThisSession() && SabrinaActive() && PlayerEnteredStateOnThisFrame(PLAYER_STATE_CRUSH_SPELL_ACTIVATE)
+    trigger = DebugMenuNotUsedInThisSession() && SabrinaActive() && PlayerEnteredStateOnThisFrame(PLAYER_STATE_CRUSH_SPELL_ACTIVATE)
 )
 
 achievement(
     id = 465613, badge = "526949",
     title = "Paths Above I Need a Lift, Chant This Spell And Up I'll Drift!", points = 2,
     description = "Activate the Bubble Spell while playing as Sabrina",
-    trigger = LockIfUsedDebugMenuInThisSession() && SabrinaActive() && PlayerEnteredStateOnThisFrame(PLAYER_STATE_BUBBLE_SPELL_ACTIVATE)
+    trigger = DebugMenuNotUsedInThisSession() && SabrinaActive() && PlayerEnteredStateOnThisFrame(PLAYER_STATE_BUBBLE_SPELL_ACTIVATE)
 )
 
 achievement(
     id = 465631, badge = "527006",
     title = "Stuck Again, Not a Problem, Pass Through Walls, Pretty Awesome!", points = 2,
     description = "Activate the Teleport Spell while playing as Sabrina",
-    trigger = LockIfUsedDebugMenuInThisSession() && SabrinaActive() && PlayerEnteredStateOnThisFrame(PLAYER_STATE_TELEPORT_SPELL_ACTIVATE)
+    trigger = DebugMenuNotUsedInThisSession() && SabrinaActive() && PlayerEnteredStateOnThisFrame(PLAYER_STATE_TELEPORT_SPELL_ACTIVATE)
 )
 
 achievement(
