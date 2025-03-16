@@ -127,11 +127,6 @@ function PlayerDamagedFlag() => bit1(0x00CA2E)
 function ReloadedAreaFlag() => bit3(0x00CA2E)
 function AreaTransitionFlag() => bit7(0x00CA2E)
 
-// $00ca30: [8-bit] In-Game Flag
-//          This value will never be 0x00 when In-Game.
-//          Used in Rich Presence only.
-function RpInGameFlag() => byte(0x00ca30)
-
 // $011000: [8-bit] Entity Active Status
 //          The first entity is always the player.
 function PlayerActiveStatus() => byte(0x011000)
@@ -190,6 +185,8 @@ function EntityClearBitAddressSpaceMarker() => byte(0x012000)
 // ---------------------------
 // -------- Constants --------
 // ---------------------------
+
+LEVEL_ADDR = 0x00C9FF
 
 LEVEL_ID_W1L1 = 0x00
 LEVEL_ID_W1L2 = 0x01
@@ -269,6 +266,7 @@ ENTITY_SLOTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18
 
 ENTITY_OFFSET_STATE = 0x02
 
+PLAYER_STATE_COMPLETE_LEVEL = 0x6DCA
 PLAYER_STATE_CRUSH_SPELL_ACTIVATE = 0x6579
 PLAYER_STATE_BUBBLE_SPELL_ACTIVATE = 0x6787
 PLAYER_STATE_TELEPORT_SPELL_ACTIVATE = 0x5F24
@@ -311,9 +309,69 @@ function StartedLevelOnThisFrame(levelId) {
     return levelCheck && initialAreaLoad && !playerInactive
 }
 
-function ClearLevelOnThisFrame(levelId, levelExitId) => DebugMenuNotUsedInThisSession() && ClearLevelOnThisFrameCore(levelId, levelExitId)
+function ContinuedLevelOnThisFrameFromGameOver(levelId) {
+    levelCheck = LevelId() == levelId
+    levelReset = prev(AnimalCounter()) == 0 && AnimalCounter() > 0
+    playerInactive = PlayerActiveStatus() == 0xFF
+    
+    return levelCheck && levelReset && !playerInactive
+}
 
-function ClearLevelOnThisFrameCore(levelId, levelExitId) => prev(LevelId()) == levelId && LevelId() == levelExitId
+function ClearLevelOnThisFrame(levelId) => DebugMenuNotUsedInThisSession() && ClearLevelOnThisFrameCore(levelId)
+
+function ClearLevelOnThisFrameCore(levelId) => InLevel(levelId) && PlayerEnteredStateOnThisFrame(PLAYER_STATE_COMPLETE_LEVEL)
+
+function InLevel(levelId) {
+    // The rightmost 5 bits of the LevelID value uniquely identify the level
+    if (levelId == LEVEL_ID_W1L1) {
+        return bit0(LEVEL_ADDR) == 0 && bit1(LEVEL_ADDR) == 0 && bit2(LEVEL_ADDR) == 0 && bit3(LEVEL_ADDR) == 0 && bit4(LEVEL_ADDR) == 0
+    }
+    else if (levelId == LEVEL_ID_W1L2) {
+        return bit0(LEVEL_ADDR) == 1 && bit1(LEVEL_ADDR) == 0 && bit2(LEVEL_ADDR) == 0 && bit3(LEVEL_ADDR) == 0 && bit4(LEVEL_ADDR) == 0
+    }
+    else if (levelId == LEVEL_ID_W1L3) {
+        return bit0(LEVEL_ADDR) == 0 && bit1(LEVEL_ADDR) == 1 && bit2(LEVEL_ADDR) == 0 && bit3(LEVEL_ADDR) == 0 && bit4(LEVEL_ADDR) == 0
+    }
+    else if (levelId == LEVEL_ID_W1L4) {
+        return bit0(LEVEL_ADDR) == 1 && bit1(LEVEL_ADDR) == 1 && bit2(LEVEL_ADDR) == 0 && bit3(LEVEL_ADDR) == 0 && bit4(LEVEL_ADDR) == 0
+    }
+    else if (levelId == LEVEL_ID_W2L1) {
+        return bit0(LEVEL_ADDR) == 1 && bit1(LEVEL_ADDR) == 0 && bit2(LEVEL_ADDR) == 1 && bit3(LEVEL_ADDR) == 0 && bit4(LEVEL_ADDR) == 0
+    }
+    else if (levelId == LEVEL_ID_W2L2) {
+        return bit0(LEVEL_ADDR) == 0 && bit1(LEVEL_ADDR) == 1 && bit2(LEVEL_ADDR) == 1 && bit3(LEVEL_ADDR) == 0 && bit4(LEVEL_ADDR) == 0
+    }
+    else if (levelId == LEVEL_ID_W2L3) {
+        return bit0(LEVEL_ADDR) == 1 && bit1(LEVEL_ADDR) == 1 && bit2(LEVEL_ADDR) == 1 && bit3(LEVEL_ADDR) == 0 && bit4(LEVEL_ADDR) == 0
+    }
+    else if (levelId == LEVEL_ID_W2L4) {
+        return bit0(LEVEL_ADDR) == 0 && bit1(LEVEL_ADDR) == 0 && bit2(LEVEL_ADDR) == 0 && bit3(LEVEL_ADDR) == 1 && bit4(LEVEL_ADDR) == 0
+    }
+    else if (levelId == LEVEL_ID_W3L1) {
+        return bit0(LEVEL_ADDR) == 0 && bit1(LEVEL_ADDR) == 1 && bit2(LEVEL_ADDR) == 0 && bit3(LEVEL_ADDR) == 1 && bit4(LEVEL_ADDR) == 0
+    }
+    else if (levelId == LEVEL_ID_W3L2) {
+        return bit0(LEVEL_ADDR) == 1 && bit1(LEVEL_ADDR) == 1 && bit2(LEVEL_ADDR) == 0 && bit3(LEVEL_ADDR) == 1 && bit4(LEVEL_ADDR) == 0
+    }
+    else if (levelId == LEVEL_ID_W3L3) {
+        return bit0(LEVEL_ADDR) == 0 && bit1(LEVEL_ADDR) == 0 && bit2(LEVEL_ADDR) == 1 && bit3(LEVEL_ADDR) == 1 && bit4(LEVEL_ADDR) == 0
+    }
+    else if (levelId == LEVEL_ID_W3L4) {
+        return bit0(LEVEL_ADDR) == 1 && bit1(LEVEL_ADDR) == 0 && bit2(LEVEL_ADDR) == 1 && bit3(LEVEL_ADDR) == 1 && bit4(LEVEL_ADDR) == 0
+    }
+    else if (levelId == LEVEL_ID_W4L1) {
+        return bit0(LEVEL_ADDR) == 1 && bit1(LEVEL_ADDR) == 1 && bit2(LEVEL_ADDR) == 1 && bit3(LEVEL_ADDR) == 1 && bit4(LEVEL_ADDR) == 0
+    }
+    else if (levelId == LEVEL_ID_W4L2) {
+        return bit0(LEVEL_ADDR) == 0 && bit1(LEVEL_ADDR) == 0 && bit2(LEVEL_ADDR) == 0 && bit3(LEVEL_ADDR) == 0 && bit4(LEVEL_ADDR) == 1
+    }
+    else if (levelId == LEVEL_ID_W4L3) {
+        return bit0(LEVEL_ADDR) == 1 && bit1(LEVEL_ADDR) == 0 && bit2(LEVEL_ADDR) == 0 && bit3(LEVEL_ADDR) == 0 && bit4(LEVEL_ADDR) == 1
+    }
+    else if (levelId == LEVEL_ID_W4L4) {
+        return bit0(LEVEL_ADDR) == 0 && bit1(LEVEL_ADDR) == 1 && bit2(LEVEL_ADDR) == 0 && bit3(LEVEL_ADDR) == 0 && bit4(LEVEL_ADDR) == 1
+    }
+}
 
 function PlayerEnteredStateOnThisFrame(playerState) => prev(PlayerState()) != playerState && PlayerState() == playerState
 
@@ -351,12 +409,13 @@ function MasterWorld(allLevelIds, firstLevelId, bossLevelId, bossStateTransform)
     return DebugMenuNotUsedInThisSession() && startCondition && resetCondition && triggerCondition
 }
 
-function ZappedChallengeLevel(levelId, levelExitId) {
-    startCondition = once(StartedLevelOnThisFrame(levelId))
+function ZappedChallengeLevel(levelId) {
+    startConditionA = StartedLevelOnThisFrame(levelId)
+    startConditionB = ContinuedLevelOnThisFrameFromGameOver(levelId)
     resetConditionA = prev(AnimalCounter()) > AnimalCounter() && CurrentPowerStarCount() < 0x05
     resetConditionB = PlayerOutOfHealthOnThisFrame()
     
-    return DebugMenuNotUsedInThisSession() && once(startCondition) && never(resetConditionA) && never(resetConditionB) && trigger_when(ClearLevelOnThisFrameCore(levelId, levelExitId))
+    return DebugMenuNotUsedInThisSession() && (once(startConditionA) || once(startConditionB)) && never(resetConditionA) && never(resetConditionB) && trigger_when(ClearLevelOnThisFrameCore(levelId))
 }
 
 
@@ -369,7 +428,7 @@ achievement(
     title = "Greendale School Level 1 Clear", points = 1,
     description = "Clear Level 1-1",
     type = "progression",
-    trigger = ClearLevelOnThisFrame(LEVEL_ID_W1L1, LEVEL_ID_EXIT_W1L1)
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W1L1)
 )
 
 achievement(
@@ -377,7 +436,7 @@ achievement(
     title = "Greendale School Level 2 Clear", points = 1,
     description = "Clear Level 1-2",
     type = "progression",
-    trigger = ClearLevelOnThisFrame(LEVEL_ID_W1L2, LEVEL_ID_EXIT_W1L2)
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W1L2)
 )
 
 achievement(
@@ -385,7 +444,7 @@ achievement(
     title = "Greendale School Level 3 Clear", points = 1,
     description = "Clear Level 1-3",
     type = "progression",
-    trigger = ClearLevelOnThisFrame(LEVEL_ID_W1L3, LEVEL_ID_EXIT_W1L3)
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W1L3)
 )
 
 achievement(
@@ -393,7 +452,7 @@ achievement(
     title = "Greendale School Level 4 Clear", points = 1,
     description = "Clear Level 1-4",
     type = "progression",
-    trigger = ClearLevelOnThisFrame(LEVEL_ID_W1L4, LEVEL_ID_EXIT_W1L4)
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W1L4)
 )
 
 achievement(
@@ -409,7 +468,7 @@ achievement(
     title = "Beach Festival Level 1 Clear", points = 2,
     description = "Clear Level 2-1",
     type = "progression",
-    trigger = ClearLevelOnThisFrame(LEVEL_ID_W2L1, LEVEL_ID_EXIT_W2L1)
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W2L1)
 )
 
 achievement(
@@ -417,7 +476,7 @@ achievement(
     title = "Beach Festival Level 2 Clear", points = 2,
     description = "Clear Level 2-2",
     type = "progression",
-    trigger = ClearLevelOnThisFrame(LEVEL_ID_W2L2, LEVEL_ID_EXIT_W2L2)
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W2L2)
 )
 
 achievement(
@@ -425,7 +484,7 @@ achievement(
     title = "Beach Festival Level 3 Clear", points = 2,
     description = "Clear Level 2-3",
     type = "progression",
-    trigger = ClearLevelOnThisFrame(LEVEL_ID_W2L3, LEVEL_ID_EXIT_W2L3)
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W2L3)
 )
 
 achievement(
@@ -433,7 +492,7 @@ achievement(
     title = "Beach Festival Level 4 Clear", points = 2,
     description = "Clear Level 2-4",
     type = "progression",
-    trigger = ClearLevelOnThisFrame(LEVEL_ID_W2L4, LEVEL_ID_EXIT_W2L4)
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W2L4)
 )
 
 achievement(
@@ -449,7 +508,7 @@ achievement(
     title = "Town Center Mall Level 1 Clear", points = 3,
     description = "Clear Level 3-1",
     type = "progression",
-    trigger = ClearLevelOnThisFrame(LEVEL_ID_W3L1, LEVEL_ID_EXIT_W3L1)
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W3L1)
 )
 
 achievement(
@@ -457,7 +516,7 @@ achievement(
     title = "Town Center Mall Level 2 Clear", points = 3,
     description = "Clear Level 3-2",
     type = "progression",
-    trigger = ClearLevelOnThisFrame(LEVEL_ID_W3L2, LEVEL_ID_EXIT_W3L2)
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W3L2)
 )
 
 achievement(
@@ -465,7 +524,7 @@ achievement(
     title = "Town Center Mall Level 3 Clear", points = 3,
     description = "Clear Level 3-3",
     type = "progression",
-    trigger = ClearLevelOnThisFrame(LEVEL_ID_W3L3, LEVEL_ID_EXIT_W3L3)
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W3L3)
 )
 
 achievement(
@@ -473,7 +532,7 @@ achievement(
     title = "Town Center Mall Level 4 Clear", points = 3,
     description = "Clear Level 3-4",
     type = "progression",
-    trigger = ClearLevelOnThisFrame(LEVEL_ID_W3L4, LEVEL_ID_EXIT_W3L4)
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W3L4)
 )
 
 achievement(
@@ -489,7 +548,7 @@ achievement(
     title = "Greendale City Zoo Level 1 Clear", points = 4,
     description = "Clear Level 4-1",
     type = "progression",
-    trigger = ClearLevelOnThisFrame(LEVEL_ID_W4L1, LEVEL_ID_EXIT_W4L1)
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W4L1)
 )
 
 achievement(
@@ -497,7 +556,7 @@ achievement(
     title = "Greendale City Zoo Level 2 Clear", points = 4,
     description = "Clear Level 4-2",
     type = "progression",
-    trigger = ClearLevelOnThisFrame(LEVEL_ID_W4L2, LEVEL_ID_EXIT_W4L2)
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W4L2)
 )
 
 achievement(
@@ -505,7 +564,7 @@ achievement(
     title = "Greendale City Zoo Level 3 Clear", points = 4,
     description = "Clear Level 4-3",
     type = "progression",
-    trigger = ClearLevelOnThisFrame(LEVEL_ID_W4L3, LEVEL_ID_EXIT_W4L3)
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W4L3)
 )
 
 achievement(
@@ -513,7 +572,7 @@ achievement(
     title = "Greendale City Zoo Level 4 Clear", points = 4,
     description = "Clear Level 4-4",
     type = "progression",
-    trigger = ClearLevelOnThisFrame(LEVEL_ID_W4L4, LEVEL_ID_EXIT_W4L4)
+    trigger = ClearLevelOnThisFrame(LEVEL_ID_W4L4)
 )
 
 achievement(
@@ -584,84 +643,84 @@ achievement(
     id = 466255, badge = "528178",
     title = "Zapped! I", points = 5,
     description = "Clear Level 1-4 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
-    trigger = ZappedChallengeLevel(LEVEL_ID_W1L4, LEVEL_ID_EXIT_W1L4)
+    trigger = ZappedChallengeLevel(LEVEL_ID_W1L4)
 )
 
 achievement(
     id = 466478, badge = "528356",
     title = "Zapped! II", points = 5,
     description = "Clear Level 2-1 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
-    trigger = ZappedChallengeLevel(LEVEL_ID_W2L1, LEVEL_ID_EXIT_W2L1)
+    trigger = ZappedChallengeLevel(LEVEL_ID_W2L1)
 )
 
 achievement(
     id = 466479, badge = "528357",
     title = "Zapped! III", points = 5,
     description = "Clear Level 2-2 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
-    trigger = ZappedChallengeLevel(LEVEL_ID_W2L2, LEVEL_ID_EXIT_W2L2)
+    trigger = ZappedChallengeLevel(LEVEL_ID_W2L2)
 )
 
 achievement(
     id = 466480, badge = "528360",
     title = "Zapped! IV", points = 5,
     description = "Clear Level 2-3 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
-    trigger = ZappedChallengeLevel(LEVEL_ID_W2L3, LEVEL_ID_EXIT_W2L3)
+    trigger = ZappedChallengeLevel(LEVEL_ID_W2L3)
 )
 
 achievement(
     id = 466485, badge = "528365",
     title = "Zapped! V", points = 5,
     description = "Clear Level 2-4 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
-    trigger = ZappedChallengeLevel(LEVEL_ID_W2L4, LEVEL_ID_EXIT_W2L4)
+    trigger = ZappedChallengeLevel(LEVEL_ID_W2L4)
 )
 
 achievement(
     id = 466486, badge = "528376",
     title = "Zapped! VI", points = 5,
     description = "Clear Level 3-1 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
-    trigger = ZappedChallengeLevel(LEVEL_ID_W3L1, LEVEL_ID_EXIT_W3L1)
+    trigger = ZappedChallengeLevel(LEVEL_ID_W3L1)
 )
 
 achievement(
     id = 466487, badge = "528377",
     title = "Zapped! VII", points = 10,
     description = "Clear Level 3-2 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
-    trigger = ZappedChallengeLevel(LEVEL_ID_W3L2, LEVEL_ID_EXIT_W3L2)
+    trigger = ZappedChallengeLevel(LEVEL_ID_W3L2)
 )
 
 achievement(
     id = 466488, badge = "528379",
     title = "Zapped! VIII", points = 10,
     description = "Clear Level 3-3 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
-    trigger = ZappedChallengeLevel(LEVEL_ID_W3L3, LEVEL_ID_EXIT_W3L3)
+    trigger = ZappedChallengeLevel(LEVEL_ID_W3L3)
 )
 
 achievement(
     id = 466489, badge = "528380",
     title = "Zapped! IX", points = 5,
     description = "Clear Level 4-1 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
-    trigger = ZappedChallengeLevel(LEVEL_ID_W4L1, LEVEL_ID_EXIT_W4L1)
+    trigger = ZappedChallengeLevel(LEVEL_ID_W4L1)
 )
 
 achievement(
     id = 466490, badge = "528381",
     title = "Zapped! X", points = 5,
     description = "Clear Level 4-2 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
-    trigger = ZappedChallengeLevel(LEVEL_ID_W4L2, LEVEL_ID_EXIT_W4L2)
+    trigger = ZappedChallengeLevel(LEVEL_ID_W4L2)
 )
 
 achievement(
     id = 466491, badge = "528382",
     title = "Zapped! XI", points = 10,
     description = "Clear Level 4-3 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
-    trigger = ZappedChallengeLevel(LEVEL_ID_W4L3, LEVEL_ID_EXIT_W4L3)
+    trigger = ZappedChallengeLevel(LEVEL_ID_W4L3)
 )
 
 achievement(
     id = 466492, badge = "528383",
     title = "Zapped! XII", points = 10,
     description = "Clear Level 4-4 without losing a life and having collected all 5 power stars before transforming any of Sabrina's classmates back into humans",
-    trigger = ZappedChallengeLevel(LEVEL_ID_W4L4, LEVEL_ID_EXIT_W4L4)
+    trigger = ZappedChallengeLevel(LEVEL_ID_W4L4)
 )
 
 
@@ -727,7 +786,7 @@ leaderboard(
 
 PASSWORD_SCREEN_LEVEL_IDS = [0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53]
 
-function NotInGame() => RpInGameFlag() == 0x00 || PlayerActiveStatus() != 0x00 || PlayerStateCategory() == 0x5F || PlayerStateCategory() == 0x69 || PlayerStateCategory() == 0x6A || InArray(LevelId(), PASSWORD_SCREEN_LEVEL_IDS)
+function NotInGame() => PlayerActiveStatus() != 0x00 || PlayerStateCategory() == 0x5F || PlayerStateCategory() == 0x69 || PlayerStateCategory() == 0x6A || InArray(LevelId(), PASSWORD_SCREEN_LEVEL_IDS)
 
 LevelLookup = {
     LEVEL_ID_W1L1: "in Level 1-1",
